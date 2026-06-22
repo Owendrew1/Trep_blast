@@ -4,12 +4,14 @@ BLAST query sequences against **UTM haploid** from `index_Trep_refs`. Maps hits 
 
 ## Prerequisites
 
-1. UTM haploid indexed and decompressed on scratch (`index_Trep_refs`):
+1. UTM haploid indexed (`index_Trep_refs`). Scratch layout (default config):
 
    ```
    /scratch/references/trifolium/repens/UTM_Trep_v1.0/GCA_030408175.1_UTM_Trep_v1.0_genomic.fna
    /scratch/references/trifolium/repens/Trep_ref_indexing.done
    ```
+
+   Old home layout: set `refs_use_haplotype_subdir: true` and point `refs_dir` / `index_done_flag` at `index_Trep_refs/results` (see commented lines in `config/config.yaml`).
 
 2. Conda env:
 
@@ -22,7 +24,7 @@ BLAST query sequences against **UTM haploid** from `index_Trep_refs`. Maps hits 
 
 Edit `config/config.yaml` if needed:
 
-- `refs_dir`, `index_done_flag` — scratch reference paths
+- `refs_dir`, `index_done_flag`, `refs_use_haplotype_subdir` — reference paths (match `Trep_pangenome` / `index_Trep_refs`)
 - `output_dir` — where BLAST DB and results are written (default `/scratch/odrew060/Trep_blast`)
 - `blast.min_qcov`, `blast.min_pident`, `blast.max_evalue` — hit vs deletion thresholds
 

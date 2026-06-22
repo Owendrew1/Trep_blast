@@ -9,6 +9,7 @@ include: "rules/common.smk"
 
 REFS = config["refs_dir"]
 INDEX_DONE = config["index_done_flag"]
+USE_HAP_SUBDIR = config.get("refs_use_haplotype_subdir", False)
 TARGET = config["blast_target"]
 OUT = Path(config["output_dir"])
 LOG = OUT / "blast_logs"
@@ -19,7 +20,7 @@ BLAST = config["blast"]
 QUERY_FASTA = config["queries_fasta"]
 NAME = TARGET["name"]
 
-REF = ref_fna(TARGET, REFS)
+REF = ref_fna(TARGET, REFS, USE_HAP_SUBDIR)
 DB_DIR = OUT / "db" / NAME
 DB_PREFIX = DB_DIR / REF.name
 RAW_HITS = RES / f"{NAME}_hits.raw.tsv"
