@@ -1,0 +1,21 @@
+# UTM haploid reference from index_Trep_refs (read-only).
+refs_dir: "/scratch/references/trifolium/repens"
+index_done_flag: "/scratch/references/trifolium/repens/Trep_ref_indexing.done"
+
+blast_target:
+  name: UTM_haploid
+  source: UTM_Trep_v1.0
+  file: GCA_030408175.1_UTM_Trep_v1.0_genomic.fna.gz
+
+queries_fasta: "../resources/queries.fasta"
+output_dir: "/scratch/odrew060/Trep_blast"
+
+blast:
+  task: blastn
+  evalue: 1e-5
+  max_target_seqs: 5
+  threads: 4
+  # Hit vs deletion_candidate thresholds (applied to best HSP per query).
+  min_pident: 80
+  min_qcov: 70
+  max_evalue: 1e-5

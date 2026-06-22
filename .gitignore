@@ -1,0 +1,4 @@
+.snakemake/
+results/
+work/
+.DS_Store

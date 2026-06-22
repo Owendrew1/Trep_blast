@@ -1,0 +1,86 @@
+# Trep_blast
+
+BLAST query sequences against **UTM haploid** from `index_Trep_refs`. Maps hits to reference coordinates and flags likely deletions using query-coverage thresholds.
+
+## Prerequisites
+
+1. UTM haploid indexed and decompressed on scratch (`index_Trep_refs`):
+
+   ```
+   /scratch/references/trifolium/repens/UTM_Trep_v1.0/GCA_030408175.1_UTM_Trep_v1.0_genomic.fna
+   /scratch/references/trifolium/repens/Trep_ref_indexing.done
+   ```
+
+2. Conda env:
+
+   ```bash
+   conda env create -f environment.yaml
+   conda activate snakemake
+   ```
+
+## Setup
+
+Edit `config/config.yaml` if needed:
+
+- `refs_dir`, `index_done_flag` — scratch reference paths
+- `output_dir` — where BLAST DB and results are written (default `/scratch/odrew060/Trep_blast`)
+- `blast.min_qcov`, `blast.min_pident`, `blast.max_evalue` — hit vs deletion thresholds
+
+Put your sequences in `resources/queries.fasta`.
+
+## Run
+
+```bash
+cd ~/github-repos/Trep_blast
+./scripts/run_blast.sh 4
+```
+
+Dry run:
+
+```bash
+snakemake -s workflow/Snakefile --directory workflow --cores 1 -n -p --use-conda
+```
+
+## Outputs
+
+Under `{output_dir}/`:
+
+| Path | Description |
+|------|-------------|
+| `db/UTM_haploid/` | BLAST nucleotide database |
+| `results/UTM_haploid_hits.raw.tsv` | Raw BLAST outfmt6 |
+| `results/UTM_haploid_hits.summary.tsv` | Best hit per query + status |
+| `blast.done` | Workflow complete |
+
+### Summary TSV columns
+
+| Column | Meaning |
+|--------|---------|
+| `query_id` | Query sequence name |
+| `status` | `hit`, `no_hit`, `low_coverage`, `low_identity`, or `weak_evalue` |
+| `deletion_candidate` | `yes` if `no_hit`, `low_coverage`, or `weak_evalue` |
+| `subject_id` | Reference contig/chromosome |
+| `ref_start`, `ref_end` | Coordinates on UTM haploid |
+| `qcovs` | Query coverage (%) — primary deletion threshold |
+
+## Status logic
+
+- **hit** — passes `min_pident`, `min_qcov`, and `max_evalue`
+- **no_hit** — no BLAST alignment
+- **low_coverage** — best hit covers &lt; `min_qcov`% of query → likely deletion or major divergence
+- **low_identity** — hit location but poor identity (review manually)
+- **weak_evalue** — poor significance
+
+## Layout
+
+```text
+Trep_blast/
+├── config/config.yaml
+├── resources/queries.fasta
+├── workflow/
+│   ├── Snakefile
+│   ├── envs/blast.yaml
+│   ├── rules/common.smk
+│   └── scripts/parse_blast_hits.py
+└── scripts/run_blast.sh
+```

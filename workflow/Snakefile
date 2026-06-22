@@ -1,0 +1,114 @@
+# BLAST query sequences against UTM haploid (index_Trep_refs).
+# Run from repo root:
+#   ./scripts/run_blast.sh
+
+from pathlib import Path
+
+configfile: "../config/config.yaml"
+include: "rules/common.smk"
+
+REFS = config["refs_dir"]
+INDEX_DONE = config["index_done_flag"]
+TARGET = config["blast_target"]
+OUT = Path(config["output_dir"])
+LOG = OUT / "blast_logs"
+RES = OUT / "results"
+DONE = OUT / "blast.done"
+
+BLAST = config["blast"]
+QUERY_FASTA = config["queries_fasta"]
+NAME = TARGET["name"]
+
+REF = ref_fna(TARGET, REFS)
+DB_DIR = OUT / "db" / NAME
+DB_PREFIX = DB_DIR / REF.name
+RAW_HITS = RES / f"{NAME}_hits.raw.tsv"
+SUMMARY = RES / f"{NAME}_hits.summary.tsv"
+PARSE_SCRIPT = Path(workflow.basedir) / "scripts" / "parse_blast_hits.py"
+
+
+rule all:
+    input:
+        DONE,
+
+
+rule make_blast_db:
+    input:
+        ref=REF,
+        index_done=INDEX_DONE,
+    output:
+        multiext(str(DB_PREFIX), ".nhr", ".nin", ".nsq"),
+    log:
+        LOG / "make_blast_db.log",
+    params:
+        db_dir=str(DB_DIR),
+        db_prefix=str(DB_PREFIX),
+    conda:
+        "envs/blast.yaml",
+    shell:
+        """
+        mkdir -p {params.db_dir} $(dirname {log})
+        makeblastdb -in {input.ref} -dbtype nucl -out {params.db_prefix} 2> {log}
+        """
+
+
+rule blastn_queries:
+    input:
+        queries=QUERY_FASTA,
+        db=rules.make_blast_db.output,
+    output:
+        RAW_HITS,
+    log:
+        LOG / "blastn.log",
+    params:
+        task=BLAST["task"],
+        evalue=BLAST["evalue"],
+        max_targets=BLAST["max_target_seqs"],
+        db_prefix=str(DB_PREFIX),
+    threads: BLAST["threads"],
+    conda:
+        "envs/blast.yaml",
+    shell:
+        """
+        mkdir -p $(dirname {output}) $(dirname {log})
+        blastn -task {params.task} -query {input.queries} -db {params.db_prefix} \
+          -evalue {params.evalue} -max_target_seqs {params.max_targets} -num_threads {threads} \
+          -outfmt "6 qseqid sseqid pident length qstart qend sstart send evalue bitscore qcovs" \
+          -out {output} 2> {log}
+        """
+
+
+rule parse_blast_hits:
+    input:
+        hits=RAW_HITS,
+        queries=QUERY_FASTA,
+    output:
+        SUMMARY,
+    log:
+        LOG / "parse_blast_hits.log",
+    params:
+        script=str(PARSE_SCRIPT),
+        min_pident=BLAST["min_pident"],
+        min_qcov=BLAST["min_qcov"],
+        max_evalue=BLAST["max_evalue"],
+    shell:
+        """
+        mkdir -p $(dirname {output}) $(dirname {log})
+        python {params.script} \
+          --hits {input.hits} \
+          --queries {input.queries} \
+          --output {output} \
+          --min-pident {params.min_pident} \
+          --min-qcov {params.min_qcov} \
+          --max-evalue {params.max_evalue} \
+          > {log} 2>&1
+        """
+
+
+rule blast_done:
+    input:
+        SUMMARY,
+    output:
+        DONE,
+    shell:
+        "mkdir -p $(dirname {output}) && touch {output}"
