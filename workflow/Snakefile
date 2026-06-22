@@ -1,31 +1,10 @@
 # BLAST query sequences against UTM haploid (index_Trep_refs).
 # Run from repo root:
-#   ./scripts/run_blast.sh
-
-from pathlib import Path
+#   ./scripts/run_blast.sh 4
+# Setup: conda env create -f environment.yaml  (Snakemake only; BLAST via --use-conda)
 
 configfile: "../config/config.yaml"
 include: "rules/common.smk"
-
-REFS = config["refs_dir"]
-INDEX_DONE = config["index_done_flag"]
-USE_HAP_SUBDIR = config.get("refs_use_haplotype_subdir", False)
-TARGET = config["blast_target"]
-OUT = Path(config["output_dir"])
-LOG = OUT / "blast_logs"
-RES = OUT / "results"
-DONE = OUT / "blast.done"
-
-BLAST = config["blast"]
-QUERY_FASTA = config["queries_fasta"]
-NAME = TARGET["name"]
-
-REF = ref_fna(TARGET, REFS, USE_HAP_SUBDIR)
-DB_DIR = OUT / "db" / NAME
-DB_PREFIX = DB_DIR / REF.name
-RAW_HITS = RES / f"{NAME}_hits.raw.tsv"
-SUMMARY = RES / f"{NAME}_hits.summary.tsv"
-PARSE_SCRIPT = Path(workflow.basedir) / "scripts" / "parse_blast_hits.py"
 
 
 rule all:
@@ -45,7 +24,7 @@ rule make_blast_db:
         db_dir=str(DB_DIR),
         db_prefix=str(DB_PREFIX),
     conda:
-        "envs/blast.yaml",
+        CONDA,
     shell:
         """
         mkdir -p {params.db_dir} $(dirname {log})
@@ -68,7 +47,7 @@ rule blastn_queries:
         db_prefix=str(DB_PREFIX),
     threads: BLAST["threads"],
     conda:
-        "envs/blast.yaml",
+        CONDA,
     shell:
         """
         mkdir -p $(dirname {output}) $(dirname {log})

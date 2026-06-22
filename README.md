@@ -37,6 +37,12 @@ cd ~/github-repos/Trep_blast
 ./scripts/run_blast.sh 4
 ```
 
+Resume / check status:
+
+```bash
+bash scripts/check_blast.sh
+```
+
 Dry run:
 
 ```bash
@@ -77,12 +83,15 @@ Under `{output_dir}/`:
 
 ```text
 Trep_blast/
+├── environment.yaml          # Snakemake only
 ├── config/config.yaml
 ├── resources/queries.fasta
 ├── workflow/
-│   ├── Snakefile
-│   ├── envs/blast.yaml
-│   ├── rules/common.smk
+│   ├── Snakefile             # rules only
+│   ├── envs/blast.yaml       # blast+ (Snakemake --use-conda)
+│   ├── rules/common.smk        # paths, helpers
 │   └── scripts/parse_blast_hits.py
-└── scripts/run_blast.sh
+└── scripts/
+    ├── run_blast.sh
+    └── check_blast.sh
 ```

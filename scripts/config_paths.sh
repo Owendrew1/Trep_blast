@@ -1,0 +1,7 @@
+# Shared config paths for bash helpers. Source from scripts/: source "$(dirname "$0")/config_paths.sh"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CFG="$ROOT/config/config.yaml"
+OUT="$(grep '^output_dir:' "$CFG" | sed 's/.*: *"\?\([^"]*\)"\?.*/\1/')"
+NAME="$(awk '/^blast_target:/{f=1;next} f&&/^  name:/{gsub(/^  name: |"/,""); print; exit}' "$CFG")"
+INDEX_DONE="$(grep '^index_done_flag:' "$CFG" | sed 's/.*: *"\?\([^"]*\)"\?.*/\1/')"
+NQUERY="$(grep -c '^>' "$ROOT/resources/queries.fasta" 2>/dev/null || echo 0)"
